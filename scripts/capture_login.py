@@ -12,7 +12,12 @@ that can re-auth without a browser at all.
 This script launches a *headed* Chromium window with a fresh, empty profile
 (so we don't reuse your already-logged-in cookies). You manually drive the
 login. The script records every network request and saves it to
-`scripts/capture_output/login.json` for later inspection.
+`scripts/capture_output/login.json`.
+
+Robustness: each captured exchange is written to disk immediately, so even
+if the browser teardown raises or you Ctrl-C, the file is current. We also
+write a newline-delimited streaming copy (login.ndjson) — useful if the
+final JSON file gets truncated somehow.
 
 Steps:
 
@@ -24,24 +29,22 @@ Steps:
   - Click verify / login.
   - Once you see the lounge / dashboard, close the browser window.
 
-The script then writes scripts/capture_output/login.json containing one entry
-per HTTP request, with request bodies and response bodies. Sanitised display
-on stdout afterward — full payloads only in the file (which is gitignored).
-
-The captured file *will* contain your OTP, mobile number, and the freshly
-issued token. Do not paste it anywhere public. The file lives under
+The captured files *will* contain your OTP, mobile number, and the freshly
+issued token. Do not paste them anywhere public. They live under
 scripts/capture_output/ which is .gitignored.
 """
 
 import asyncio
 import json
 import sys
+import traceback
 from pathlib import Path
 
 from playwright.async_api import async_playwright
 
 OUT_DIR = Path(__file__).parent / "capture_output"
 OUT_FILE = OUT_DIR / "login.json"
+NDJSON_FILE = OUT_DIR / "login.ndjson"
 
 LOGIN_URL = "https://parent.neverskip.com/auth/login"
 
@@ -49,14 +52,12 @@ LOGIN_URL = "https://parent.neverskip.com/auth/login"
 def looks_relevant(url: str, content_type: str | None) -> bool:
     if not url:
         return False
-    # static asset filters
     if any(url.endswith(ext) for ext in (
         ".js", ".css", ".woff2", ".png", ".jpg", ".svg", ".ico", ".gif", ".webp",
     )):
         return False
     if "cdn.jsdelivr.net" in url or "fonts.g" in url or "cloudflare" in url:
         return False
-    # we care most about nskapi calls but also keep anything API-ish
     if "nskapi.neverskip.com" in url:
         return True
     if content_type and "application/json" in content_type:
@@ -68,6 +69,26 @@ def looks_relevant(url: str, content_type: str | None) -> bool:
 
 async def main() -> int:
     OUT_DIR.mkdir(exist_ok=True)
+    captured: list[dict] = []
+
+    # Reset both files at start so an old run can't shadow this one.
+    OUT_FILE.write_text("[]")
+    NDJSON_FILE.write_text("")
+
+    def persist():
+        """Write the running list to disk after every captured exchange. We
+        rewrite the entire file each time — N is small (tens of entries)."""
+        try:
+            OUT_FILE.write_text(json.dumps(captured, indent=2))
+        except Exception as e:
+            print(f"  persist error: {e}", file=sys.stderr)
+
+    def append_ndjson(entry: dict):
+        try:
+            with NDJSON_FILE.open("a") as f:
+                f.write(json.dumps(entry) + "\n")
+        except Exception as e:
+            print(f"  ndjson append error: {e}", file=sys.stderr)
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(
@@ -80,8 +101,6 @@ async def main() -> int:
                        "(KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
         )
         page = await context.new_page()
-
-        captured: list[dict] = []
 
         async def on_response(resp):
             try:
@@ -106,47 +125,55 @@ async def main() -> int:
                     entry["response_body"] = None
                     entry["response_body_len"] = None
                 captured.append(entry)
-                # tiny live tail so the user sees progress
+                append_ndjson(entry)
+                persist()
+                # short live tail so user sees progress
                 tag = url_tag(resp.url)
                 print(f"  [{resp.status}] {req.method} {tag}", file=sys.stderr)
-            except Exception as e:
-                print(f"  on_response error for {resp.url}: {e}", file=sys.stderr)
+            except Exception:
+                print("  on_response error:", file=sys.stderr)
+                traceback.print_exc()
 
         page.on("response", lambda r: asyncio.create_task(on_response(r)))
 
         print("opening login page; complete the OTP flow in the browser, then close the window…",
               file=sys.stderr)
-        await page.goto(LOGIN_URL)
+        try:
+            await page.goto(LOGIN_URL, wait_until="domcontentloaded", timeout=45_000)
+        except Exception as e:
+            print(f"  initial nav warning (continuing): {e}", file=sys.stderr)
 
-        # Wait for browser to close (user driven).
+        # Wait for either the browser disconnect (user closed the window) OR
+        # the page closing. Either way we exit gracefully.
         close_event = asyncio.Event()
         browser.on("disconnected", lambda *_: close_event.set())
-        await close_event.wait()
+        context.on("close", lambda *_: close_event.set())
+        page.on("close", lambda *_: close_event.set())
 
-    OUT_FILE.write_text(json.dumps(captured, indent=2))
+        try:
+            await close_event.wait()
+        except KeyboardInterrupt:
+            print("\nKeyboardInterrupt — saving what we have", file=sys.stderr)
+
+    # Final persist outside the playwright context, just to be sure.
+    persist()
     print(f"\nwrote {len(captured)} captured exchanges to {OUT_FILE}", file=sys.stderr)
+    print(f"streamed copy at {NDJSON_FILE}", file=sys.stderr)
 
-    # short tabular summary on stdout (no payloads)
-    print("\n=== summary ===")
+    print("\n=== summary (no payloads) ===")
     for c in captured:
         flag = "JSON" if (c.get("response_content_type") or "").startswith("application/json") else ""
         print(f"  [{c['status']:>3}] {c['method']:<6} {url_tag(c['url']):<70} {flag}")
 
-    # try to flag the obvious "login-y" calls
-    print("\n=== heuristically-interesting exchanges ===")
+    print("\n=== heuristically-interesting exchanges (paths only) ===")
     for c in captured:
         path = c["url"].split("?")[0].lower()
-        if any(k in path for k in ("auth", "login", "otp", "verify", "session")):
-            body = (c.get("response_body") or "")[:200].replace("\n", " ")
+        if any(k in path for k in ("auth", "login", "otp", "verify", "session", "user", "token")):
             print(f"  {c['method']} {c['url']}")
-            print(f"    request_post_data: {(c.get('request_post_data') or '')[:200]}")
-            print(f"    response_body[0:200]: {body}")
-            print()
     return 0
 
 
 def url_tag(url: str) -> str:
-    """Compact display form of a URL — host + path, no query string."""
     try:
         from urllib.parse import urlparse
         p = urlparse(url)
@@ -156,4 +183,11 @@ def url_tag(url: str) -> str:
 
 
 if __name__ == "__main__":
-    sys.exit(asyncio.run(main()))
+    try:
+        sys.exit(asyncio.run(main()))
+    except KeyboardInterrupt:
+        print("\nKeyboardInterrupt at top level", file=sys.stderr)
+        sys.exit(1)
+    except Exception:
+        traceback.print_exc()
+        sys.exit(2)
