@@ -94,6 +94,11 @@ All via env vars; loaded once at startup. Required:
 
 Optional:
 
+- `TOKEN_FILE` — path to a file holding just the token (one line, whitespace
+  trimmed). When set and the file is non-empty, the service reads its token
+  from this file on each tick (cached for 5 seconds), so a future `make
+  refresh-token` CLI can rotate the token without restarting the service.
+  When unset or the file is missing, falls back to `NEVERSKIP_TOKEN`.
 - `ICS_TOKEN` — query-param secret for the calendar feed. **Unset disables the
   endpoint** (returns 501) — handy in pure-Phase-1 setups.
 - `CALENDAR_HOST` — default `spectretrade.in`; used in VEVENT UIDs to keep

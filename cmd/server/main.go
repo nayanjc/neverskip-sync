@@ -50,7 +50,7 @@ func run() error {
 	}
 	defer store.Close()
 
-	client := neverskip.New(cfg.NeverskipToken)
+	client := neverskip.NewWithProvider(fileTokenProvider(cfg.TokenFile, cfg.NeverskipToken))
 	ntfy := notifier.New(cfg.NtfyURL, cfg.NtfyTopic)
 	cal := calendar.New(store, cfg.ICSToken, cfg.CalendarHost, logger.With("component", "calendar"))
 

@@ -11,6 +11,7 @@ import (
 
 type Config struct {
 	NeverskipToken string
+	TokenFile      string // if set and readable, overrides NeverskipToken at runtime
 	NtfyURL        string
 	NtfyTopic      string
 	ICSToken       string
@@ -25,6 +26,7 @@ type Config struct {
 func Load() (Config, error) {
 	c := Config{
 		NeverskipToken: os.Getenv("NEVERSKIP_TOKEN"),
+		TokenFile:      os.Getenv("TOKEN_FILE"),
 		NtfyURL:        getenvDefault("NTFY_URL", "https://ntfy.sh"),
 		NtfyTopic:      os.Getenv("NTFY_TOPIC"),
 		ICSToken:       os.Getenv("ICS_TOKEN"),
@@ -58,8 +60,8 @@ func Load() (Config, error) {
 
 func (c Config) validate() error {
 	var missing []string
-	if c.NeverskipToken == "" {
-		missing = append(missing, "NEVERSKIP_TOKEN")
+	if c.NeverskipToken == "" && c.TokenFile == "" {
+		missing = append(missing, "NEVERSKIP_TOKEN or TOKEN_FILE")
 	}
 	if c.NtfyTopic == "" {
 		missing = append(missing, "NTFY_TOPIC")
