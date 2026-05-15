@@ -1,0 +1,236 @@
+{
+  "S": true,
+  "D": {
+    "allow_download_nb_cg_videos": "N",
+    "item_list": [
+      {
+        "title": "[ I - E ] Google form: Students' photo: |Jai Shri Gurudev! Namaste Dear Parents, We kindly request you to upload your ward's photo in Grey school uniform with blazer and submit the Google Form with all details of your ward by Tuesday, 12th May 2026. Please refer to Neverskip for the accurate section information before filling out the form. Warm regards, Coordinator - 02:36 PM | 09 May 2026",
+        "item_list": [
+          {
+            "src": "https://example.com/forms/REDACTED",
+            "file_loc": "D",
+            "file_json": "",
+            "thump_url": "https://example.com/forms/REDACTED",
+            "download_url": "https://example.com/forms/REDACTED",
+            "type": "L",
+            "msg_id": "34489",
+            "delivery_stat": "P",
+            "pin_stat": "N",
+            "ym": "202605",
+            "ext": ""
+          }
+        ],
+        "cnt": ""
+      },
+      {
+        "title": "[ I - E ] Google form: Students' Details and Transport information : | Jai Shri Gurudev! Namaste Dear Parents, We kindly request you to complete and submit the Google Form with all details of your ward by Monday, 11th May 2026. Please refer to Neverskip for the accurate section information before filling out the form. Warm regards, Coordinator\r\n\r\n - 01:54 PM | 09 May 2026",
+        "item_list": [
+          {
+            "src": "https://example.com/forms/REDACTED",
+            "file_loc": "D",
+            "file_json": "",
+            "thump_url": "https://example.com/forms/REDACTED",
+            "download_url": "https://example.com/forms/REDACTED",
+            "type": "L",
+            "msg_id": "34486",
+            "delivery_stat": "P",
+            "pin_stat": "N",
+            "ym": "202605",
+            "ext": ""
+          }
+        ],
+        "cnt": ""
+      },
+      {
+        "title": "[ I - E ] NEWSLETTER FOR THE MONTH OF MAY:|Jai Sri Gurudev!\r\nNamaste Dear Parents,\r\nPlease find the newsletter for the month of May.\r\nThank you,\r\nCoordinator - 09:05 AM | 05 May 2026",
+        "item_list": [
+          {
+            "src": "https://example.com/attachments/REDACTED.pdf",
+            "file_loc": "D",
+            "file_json": "",
+            "thump_url": "https://example.com/icons/REDACTED.png",
+            "download_url": "https://example.com/attachments/REDACTED.pdf",
+            "type": "L",
+            "msg_id": "34446",
+            "delivery_stat": "P",
+            "pin_stat": "N",
+            "ym": "202605",
+            "ext": "pdf"
+          }
+        ],
+        "cnt": ""
+      },
+      {
+        "title": "[ I - E ] Dear Parents <br>Jai Shri Gurudev <br>Kindly find the allocation of house and sections for your ward.<br>Thanks you <br>Regards <br>Coordinator - 09:43 AM | 16 Apr 2026",
+        "item_list": [
+          {
+            "src": "https://example.com/attachments/REDACTED.pdf",
+            "file_loc": "S",
+            "file_json": "",
+            "thump_url": "https://example.com/icons/REDACTED.png",
+            "download_url": "https://example.com/attachments/REDACTED.pdf",
+            "type": "L",
+            "msg_id": "34201",
+            "delivery_stat": "N",
+            "pin_stat": "N",
+            "ym": "202604",
+            "ext": "pdf"
+          },
+          {
+            "src": "https://example.com/attachments/REDACTED.pdf",
+            "file_loc": "S",
+            "file_json": "",
+            "thump_url": "https://example.com/icons/REDACTED.png",
+            "download_url": "https://example.com/attachments/REDACTED.pdf",
+            "type": "L",
+            "msg_id": "34201",
+            "delivery_stat": "N",
+            "pin_stat": "N",
+            "ym": "202604",
+            "ext": "pdf"
+          },
+          {
+            "src": "https://example.com/attachments/REDACTED.pdf",
+            "file_loc": "S",
+            "file_json": "",
+            "thump_url": "https://example.com/icons/REDACTED.png",
+            "download_url": "https://example.com/attachments/REDACTED.pdf",
+            "type": "L",
+            "msg_id": "34201",
+            "delivery_stat": "N",
+            "pin_stat": "N",
+            "ym": "202604",
+            "ext": "pdf"
+          },
+          {
+            "src": "https://example.com/attachments/REDACTED.pdf",
+            "file_loc": "S",
+            "file_json": "",
+            "thump_url": "https://example.com/icons/REDACTED.png",
+            "download_url": "https://example.com/attachments/REDACTED.pdf",
+            "type": "L",
+            "msg_id": "34201",
+            "delivery_stat": "N",
+            "pin_stat": "N",
+            "ym": "202604",
+            "ext": "pdf"
+          },
+          {
+            "src": "https://example.com/attachments/REDACTED.pdf",
+            "file_loc": "S",
+            "file_json": "",
+            "thump_url": "https://example.com/icons/REDACTED.png",
+            "download_url": "https://example.com/attachments/REDACTED.pdf",
+            "type": "L",
+            "msg_id": "34201",
+            "delivery_stat": "N",
+            "pin_stat": "N",
+            "ym": "202604",
+            "ext": "pdf"
+          },
+          {
+            "src": "https://example.com/attachments/REDACTED.pdf",
+            "file_loc": "S",
+            "file_json": "",
+            "thump_url": "https://example.com/icons/REDACTED.png",
+            "download_url": "https://example.com/attachments/REDACTED.pdf",
+            "type": "L",
+            "msg_id": "34201",
+            "delivery_stat": "N",
+            "pin_stat": "N",
+            "ym": "202604",
+            "ext": "pdf"
+          },
+          {
+            "src": "https://example.com/attachments/REDACTED.pdf",
+            "file_loc": "S",
+            "file_json": "",
+            "thump_url": "https://example.com/icons/REDACTED.png",
+            "download_url": "https://example.com/attachments/REDACTED.pdf",
+            "type": "L",
+            "msg_id": "34201",
+            "delivery_stat": "N",
+            "pin_stat": "N",
+            "ym": "202604",
+            "ext": "pdf"
+          },
+          {
+            "src": "https://example.com/attachments/REDACTED.pdf",
+            "file_loc": "S",
+            "file_json": "",
+            "thump_url": "https://example.com/icons/REDACTED.png",
+            "download_url": "https://example.com/attachments/REDACTED.pdf",
+            "type": "L",
+            "msg_id": "34201",
+            "delivery_stat": "N",
+            "pin_stat": "N",
+            "ym": "202604",
+            "ext": "pdf"
+          },
+          {
+            "src": "https://example.com/attachments/REDACTED.pdf",
+            "file_loc": "S",
+            "file_json": "",
+            "thump_url": "https://example.com/icons/REDACTED.png",
+            "download_url": "https://example.com/attachments/REDACTED.pdf",
+            "type": "L",
+            "msg_id": "34201",
+            "delivery_stat": "N",
+            "pin_stat": "N",
+            "ym": "202604",
+            "ext": "pdf"
+          },
+          {
+            "src": "https://example.com/attachments/REDACTED.pdf",
+            "file_loc": "S",
+            "file_json": "",
+            "thump_url": "https://example.com/icons/REDACTED.png",
+            "download_url": "https://example.com/attachments/REDACTED.pdf",
+            "type": "L",
+            "msg_id": "34201",
+            "delivery_stat": "N",
+            "pin_stat": "N",
+            "ym": "202604",
+            "ext": "pdf"
+          },
+          {
+            "src": "https://example.com/attachments/REDACTED.pdf",
+            "file_loc": "S",
+            "file_json": "",
+            "thump_url": "https://example.com/icons/REDACTED.png",
+            "download_url": "https://example.com/attachments/REDACTED.pdf",
+            "type": "L",
+            "msg_id": "34201",
+            "delivery_stat": "N",
+            "pin_stat": "N",
+            "ym": "202604",
+            "ext": "pdf"
+          }
+        ],
+        "cnt": " +6"
+      },
+      {
+        "title": "[ I - E ] Dear Parents <br>Jai Shri Gurudev <br>Kindly find the attached Newsletter for the month of April .<br>Regards <br>Coordinator - 08:33 AM | 05 Apr 2026",
+        "item_list": [
+          {
+            "src": "https://example.com/attachments/REDACTED.pdf",
+            "file_loc": "S",
+            "file_json": "",
+            "thump_url": "https://example.com/icons/REDACTED.png",
+            "download_url": "https://example.com/attachments/REDACTED.pdf",
+            "type": "L",
+            "msg_id": "33960",
+            "delivery_stat": "N",
+            "pin_stat": "N",
+            "ym": "202604",
+            "ext": "pdf"
+          }
+        ],
+        "cnt": ""
+      }
+    ],
+    "prmontyr": "20260405_13092",
+    "pervious_prmontr": ""
+  },
+  "F": "S"
+}

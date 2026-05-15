@@ -1,0 +1,7 @@
+.venv/
+bin/
+scripts/capture_output/
+*.db
+*.db-journal
+*.env
+state.db*
