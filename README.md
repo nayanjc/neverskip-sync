@@ -121,6 +121,11 @@ The HTTP server is internal-only (`127.0.0.1`); nginx publishes them under
   macOS Calendar, Google Calendar can all subscribe. Returns 501 if
   `ICS_TOKEN` is unset, 401 on wrong/missing token, 304 on conditional GET
   matching the previous ETag, 200 with `text/calendar` otherwise.
+- `GET /school/dashboard?token=<ICS_TOKEN>` — server-rendered HTML view of
+  recently-seen items (default last 30 days). Mobile-friendly. Reuses
+  `ICS_TOKEN`. Query params: `days`, `source` (lounge|dailynotice), `sort`
+  (posted_at|source|section), `dir` (asc|desc). Returns 501 if `ICS_TOKEN`
+  is unset, 401 on wrong token.
 
 The calendar caches its rendered output in memory for 60 seconds, and the
 poll loop invalidates the cache the moment a new item is inserted — so a

@@ -16,6 +16,7 @@ import (
 
 	"github.com/nayan/neverskip-sync/internal/calendar"
 	"github.com/nayan/neverskip-sync/internal/config"
+	"github.com/nayan/neverskip-sync/internal/dashboard"
 	"github.com/nayan/neverskip-sync/internal/neverskip"
 	"github.com/nayan/neverskip-sync/internal/notifier"
 	"github.com/nayan/neverskip-sync/internal/poll"
@@ -53,6 +54,7 @@ func run() error {
 	client := neverskip.NewWithProvider(fileTokenProvider(cfg.TokenFile, cfg.NeverskipToken))
 	ntfy := notifier.New(cfg.NtfyURL, cfg.NtfyTopic)
 	cal := calendar.New(store, cfg.ICSToken, cfg.CalendarHost, logger.With("component", "calendar"))
+	dash := dashboard.New(store, cfg.ICSToken, logger.With("component", "dashboard"))
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
@@ -73,7 +75,7 @@ func run() error {
 
 	var srv *http.Server
 	if !*noServer {
-		srv = newHTTPServer(cfg.ListenAddr, store, cal, logger)
+		srv = newHTTPServer(cfg.ListenAddr, store, cal, dash, logger)
 		go func() {
 			logger.Info("http listening", "addr", cfg.ListenAddr)
 			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -105,7 +107,7 @@ func run() error {
 	return nil
 }
 
-func newHTTPServer(addr string, store *state.Store, cal *calendar.Handler, log *slog.Logger) *http.Server {
+func newHTTPServer(addr string, store *state.Store, cal *calendar.Handler, dash *dashboard.Handler, log *slog.Logger) *http.Server {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /school/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -125,6 +127,7 @@ func newHTTPServer(addr string, store *state.Store, cal *calendar.Handler, log *
 	})
 
 	mux.Handle("GET /school/calendar.ics", cal)
+	mux.Handle("GET /school/dashboard", dash)
 
 	return &http.Server{
 		Addr:              addr,

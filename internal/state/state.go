@@ -141,6 +141,18 @@ func (s *Store) CalendarItems(ctx context.Context) ([]Item, error) {
 	`)
 }
 
+// ItemsSince returns every seen item whose first_seen (or posted_at, if set)
+// is at or after `since`, ordered by posted_at desc. Used by the dashboard
+// handler.
+func (s *Store) ItemsSince(ctx context.Context, since time.Time) ([]Item, error) {
+	return s.queryItems(ctx, `
+		SELECT source, msg_id, section, clean_title, body, posted_at, event_time, attachments
+		FROM seen
+		WHERE COALESCE(posted_at, first_seen) >= ?
+		ORDER BY COALESCE(posted_at, first_seen) DESC
+	`, since.UTC())
+}
+
 func (s *Store) queryItems(ctx context.Context, q string, args ...any) ([]Item, error) {
 	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
