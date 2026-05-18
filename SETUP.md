@@ -8,7 +8,7 @@ anything, jump to **[Appendix: local dry run](#appendix-local-dry-run)**.
 
 ## What you'll end up with
 
-1. A Go service running on your server (Spectre box) that polls Neverskip
+1. A Go service running on your server that polls Neverskip
    every 15 minutes.
 2. Push notifications on your iPhone the moment a new lounge or daily-notice
    item appears.
@@ -26,10 +26,10 @@ On your **laptop** (where Chrome is logged in to Neverskip):
 - `ssh` access to your server with a user that can `sudo`
 - You're currently logged in to `parent.neverskip.com` in Chrome
 
-On your **server** (the Spectre box):
+On your **server**:
 
 - Linux (any modern distro with `systemd`)
-- nginx already running, terminating SSL for `spectretrade.in`
+- nginx already running, terminating SSL for `<your-domain>`
 - `sudo` privileges for the SSH user you'll use
 
 On your **iPhone**:
@@ -89,15 +89,15 @@ or Oracle Cloud Always-Free instances), edit the `build-linux` target in
 
 ## Part C — Install on the server
 
-Pick a working SSH alias. The examples below assume you can run
-`ssh spectre` and reach the server. Adjust to your real hostname.
+Pick a working SSH alias. The examples below use `<your-server>` as a
+placeholder — substitute your real ssh host or alias.
 
 ### C.1 — Create a dedicated user and directories
 
 ```bash
-ssh spectre 'sudo useradd --system --home /var/lib/neverskip-sync --shell /usr/sbin/nologin neverskip'
-ssh spectre 'sudo install -d -o neverskip -g neverskip /var/lib/neverskip-sync'
-ssh spectre 'sudo install -d -o root      -g root      /opt/neverskip-sync/bin'
+ssh <your-server> 'sudo useradd --system --home /var/lib/neverskip-sync --shell /usr/sbin/nologin neverskip'
+ssh <your-server> 'sudo install -d -o neverskip -g neverskip /var/lib/neverskip-sync'
+ssh <your-server> 'sudo install -d -o root      -g root      /opt/neverskip-sync/bin'
 ```
 
 This creates an unprivileged `neverskip` user that owns the SQLite state
@@ -107,16 +107,16 @@ the state dir, and no sudo rights.
 ### C.2 — Ship the binary
 
 ```bash
-scp bin/neverskip-sync.linux-amd64 spectre:/tmp/server
-ssh spectre 'sudo install -m 0755 -o root -g root /tmp/server /opt/neverskip-sync/bin/server && rm /tmp/server'
+scp bin/neverskip-sync.linux-amd64 <your-server>:/tmp/server
+ssh <your-server> 'sudo install -m 0755 -o root -g root /tmp/server /opt/neverskip-sync/bin/server && rm /tmp/server'
 ```
 
 ### C.3 — Drop in the systemd unit
 
 ```bash
-scp systemd/neverskip-sync.service spectre:/tmp/
-ssh spectre 'sudo install -m 0644 /tmp/neverskip-sync.service /etc/systemd/system/'
-ssh spectre 'sudo systemctl daemon-reload'
+scp systemd/neverskip-sync.service <your-server>:/tmp/
+ssh <your-server> 'sudo install -m 0644 /tmp/neverskip-sync.service /etc/systemd/system/'
+ssh <your-server> 'sudo systemctl daemon-reload'
 ```
 
 ### C.4 — Create the environment file
@@ -125,14 +125,14 @@ This is the only place real secrets live. Mode `0600`, owned by the service
 user, never committed.
 
 ```bash
-scp systemd/neverskip-sync.env.example spectre:/tmp/
-ssh spectre 'sudo install -m 0600 -o neverskip -g neverskip /tmp/neverskip-sync.env.example /etc/neverskip-sync.env'
+scp systemd/neverskip-sync.env.example <your-server>:/tmp/
+ssh <your-server> 'sudo install -m 0600 -o neverskip -g neverskip /tmp/neverskip-sync.env.example /etc/neverskip-sync.env'
 ```
 
 Now edit it on the server and fill in the three required secrets:
 
 ```bash
-ssh spectre 'sudo -e /etc/neverskip-sync.env'
+ssh <your-server> 'sudo -e /etc/neverskip-sync.env'
 ```
 
 You need to replace three lines:
@@ -149,21 +149,21 @@ them.
 **Save and close.** Verify the file is readable only by the service user:
 
 ```bash
-ssh spectre 'sudo ls -l /etc/neverskip-sync.env'
+ssh <your-server> 'sudo ls -l /etc/neverskip-sync.env'
 # expect: -rw------- 1 neverskip neverskip ...
 ```
 
 ### C.5 — Add the nginx location block
 
 ```bash
-scp nginx/neverskip-sync.conf spectre:/tmp/
-ssh spectre 'sudo install -m 0644 /tmp/neverskip-sync.conf /etc/nginx/snippets/neverskip-sync.conf'
+scp nginx/neverskip-sync.conf <your-server>:/tmp/
+ssh <your-server> 'sudo install -m 0644 /tmp/neverskip-sync.conf /etc/nginx/snippets/neverskip-sync.conf'
 ```
 
-Now include it in the existing `server { }` block for `spectretrade.in`:
+Now include it in the existing `server { }` block for `<your-domain>`:
 
 ```bash
-ssh spectre 'sudo $EDITOR /etc/nginx/sites-enabled/spectretrade.in.conf'
+ssh <your-server> 'sudo $EDITOR /etc/nginx/sites-enabled/<your-domain>.conf'
 ```
 
 Inside the `server { ... }` block that listens on `443`, add:
@@ -175,23 +175,23 @@ include /etc/nginx/snippets/neverskip-sync.conf;
 Test and reload:
 
 ```bash
-ssh spectre 'sudo nginx -t && sudo systemctl reload nginx'
+ssh <your-server> 'sudo nginx -t && sudo systemctl reload nginx'
 ```
 
 `nginx -t` must say `syntax is ok` and `test is successful`. If it doesn't,
 fix the config before continuing — a broken nginx config will take down
-everything on `spectretrade.in`.
+everything on `<your-domain>`.
 
 ### C.6 — Start the service
 
 ```bash
-ssh spectre 'sudo systemctl enable --now neverskip-sync'
+ssh <your-server> 'sudo systemctl enable --now neverskip-sync'
 ```
 
 Watch the first ~30 seconds of logs to confirm it's healthy:
 
 ```bash
-ssh spectre 'sudo journalctl -u neverskip-sync -f --since=-1m'
+ssh <your-server> 'sudo journalctl -u neverskip-sync -f --since=-1m'
 ```
 
 You should see, in order:
@@ -215,14 +215,14 @@ Press `Ctrl-C` to stop tailing.
 From your **laptop** (or anywhere on the internet), test the health probe:
 
 ```bash
-curl -s https://spectretrade.in/school/healthz
+curl -s https://<your-domain>/school/healthz
 # expect: ok
 ```
 
 And the calendar feed with your real `ICS_TOKEN`:
 
 ```bash
-curl -s -o /tmp/cal.ics "https://spectretrade.in/school/calendar.ics?token=$(ssh spectre 'sudo grep ^ICS_TOKEN= /etc/neverskip-sync.env | cut -d= -f2-')"
+curl -s -o /tmp/cal.ics "https://<your-domain>/school/calendar.ics?token=$(ssh <your-server> 'sudo grep ^ICS_TOKEN= /etc/neverskip-sync.env | cut -d= -f2-')"
 head -20 /tmp/cal.ics
 ```
 
@@ -230,7 +230,7 @@ You should see a `BEGIN:VCALENDAR` block with one or more `BEGIN:VEVENT`
 entries.
 
 If you don't have access to the env file from your shell, just open
-`https://spectretrade.in/school/calendar.ics?token=PASTE_TOKEN_HERE` in your
+`https://<your-domain>/school/calendar.ics?token=PASTE_TOKEN_HERE` in your
 browser — it'll download or display the ICS feed.
 
 The server side is done.
@@ -251,7 +251,7 @@ The server side is done.
 To verify pushes work, you can send a manual test from the server:
 
 ```bash
-ssh spectre 'curl -s -d "test push from server" https://ntfy.sh/$(sudo grep ^NTFY_TOPIC= /etc/neverskip-sync.env | cut -d= -f2-)'
+ssh <your-server> 'curl -s -d "test push from server" https://ntfy.sh/$(sudo grep ^NTFY_TOPIC= /etc/neverskip-sync.env | cut -d= -f2-)'
 ```
 
 A notification titled "ntfy.sh/your-topic" should appear on the phone
@@ -263,7 +263,7 @@ within a couple of seconds.
    (On older iOS: **Settings → Calendar → Accounts → ...**.)
 2. **Server**: paste the full URL with the token:
    ```
-   https://spectretrade.in/school/calendar.ics?token=YOUR_ICS_TOKEN_HERE
+   https://<your-domain>/school/calendar.ics?token=YOUR_ICS_TOKEN_HERE
    ```
 3. Tap **Next**. iOS will fetch the feed once to validate.
 4. **Description**: rename to something like "School" if you want.
@@ -283,7 +283,7 @@ The same calendar shows up on iPad (same Apple ID) and on the laptop via
 
 ## Part E — End-to-end verification
 
-1. Watch the service: `ssh spectre 'sudo journalctl -u neverskip-sync -f'`
+1. Watch the service: `ssh <your-server> 'sudo journalctl -u neverskip-sync -f'`
 2. Wait until the school posts something new (or simulate by deleting a row
    from SQLite — see [Manual smoke test](#manual-smoke-test) below).
 3. Within `POLL_INTERVAL` (default 15 minutes), you should see in the logs:
@@ -311,15 +311,15 @@ To recover:
 2. Run `make token-env` — copy the value after `NEVERSKIP_TOKEN=`.
 3. Edit the env file on the server and replace the old `NEVERSKIP_TOKEN`:
    ```bash
-   ssh spectre 'sudo -e /etc/neverskip-sync.env'
+   ssh <your-server> 'sudo -e /etc/neverskip-sync.env'
    ```
 4. Restart the service:
    ```bash
-   ssh spectre 'sudo systemctl restart neverskip-sync'
+   ssh <your-server> 'sudo systemctl restart neverskip-sync'
    ```
 5. Confirm it's healthy:
    ```bash
-   ssh spectre 'sudo journalctl -u neverskip-sync --since=-1m'
+   ssh <your-server> 'sudo journalctl -u neverskip-sync --since=-1m'
    ```
    Look for `startup auth probe ok` again.
 
@@ -329,8 +329,8 @@ When you pull new code on the laptop:
 
 ```bash
 make build-linux
-scp bin/neverskip-sync.linux-amd64 spectre:/tmp/server
-ssh spectre 'sudo install -m 0755 /tmp/server /opt/neverskip-sync/bin/server && rm /tmp/server && sudo systemctl restart neverskip-sync'
+scp bin/neverskip-sync.linux-amd64 <your-server>:/tmp/server
+ssh <your-server> 'sudo install -m 0755 /tmp/server /opt/neverskip-sync/bin/server && rm /tmp/server && sudo systemctl restart neverskip-sync'
 ```
 
 The SQLite database persists across restarts — your dedup history doesn't
@@ -350,7 +350,7 @@ error first, re-run `sudo nginx -t` until it says `successful`, then reload.
 
 ### Calendar shows no events
 
-- Run `curl -s -o /dev/null -w '%{http_code}\n' "https://spectretrade.in/school/calendar.ics?token=YOUR_TOKEN"` — should print `200`.
+- Run `curl -s -o /dev/null -w '%{http_code}\n' "https://<your-domain>/school/calendar.ics?token=YOUR_TOKEN"` — should print `200`.
 - If `401`: token mismatch. Compare the URL you pasted into iOS with the
   `ICS_TOKEN` value in `/etc/neverskip-sync.env`.
 - If `501`: `ICS_TOKEN` is unset in the env file. Set it and restart.
@@ -369,7 +369,7 @@ error first, re-run `sudo nginx -t` until it says `successful`, then reload.
 ### Service crashes repeatedly
 
 ```bash
-ssh spectre 'sudo journalctl -u neverskip-sync --since=-10m -n 100'
+ssh <your-server> 'sudo journalctl -u neverskip-sync --since=-10m -n 100'
 ```
 
 The most common cause: `SQLITE_PATH` points to a directory the
@@ -381,9 +381,9 @@ The most common cause: `SQLITE_PATH` points to a directory the
 To force the next tick to find a "new" item without waiting for the school:
 
 ```bash
-ssh spectre 'sudo -u neverskip sqlite3 /var/lib/neverskip-sync/state.db \
+ssh <your-server> 'sudo -u neverskip sqlite3 /var/lib/neverskip-sync/state.db \
   "DELETE FROM seen WHERE source = '\''dailynotice'\'' ORDER BY first_seen DESC LIMIT 1;"'
-ssh spectre 'sudo systemctl restart neverskip-sync'
+ssh <your-server> 'sudo systemctl restart neverskip-sync'
 ```
 
 The just-deleted item will be re-discovered on the next poll and trigger a

@@ -58,7 +58,7 @@ type Handler struct {
 //
 // token: required query-param secret. If empty, all requests get 501.
 // host:  domain used in the UID suffix to keep VEVENT IDs globally unique
-//        across hosts (e.g. "spectretrade.in").
+//        across hosts (e.g. the public domain you serve the feed from).
 func New(store *state.Store, token, host string, log *slog.Logger) *Handler {
 	return &Handler{
 		store: store,

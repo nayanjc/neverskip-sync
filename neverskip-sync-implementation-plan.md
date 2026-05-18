@@ -43,20 +43,20 @@ The goal is to replace that workflow with a system that pushes new items to my p
 
 One Go web service. No mobile app to build. No UI of my own.
 
-The service runs on my existing server (the Spectre box at `spectretrade.in`). On a schedule, it logs into `parent.neverskip.com`, fetches the lounge and dailynotice JSON endpoints, detects items it has not seen before, and fans them out two ways:
+The service runs on a small Linux server reachable at a public HTTPS domain (TBD; referred to below as `<your-domain>`). On a schedule, it logs into `parent.neverskip.com`, fetches the lounge and dailynotice JSON endpoints, detects items it has not seen before, and fans them out two ways:
 
 1. A push notification via [ntfy.sh](https://ntfy.sh) — installed once on my iPhone, free, no account, pushes arrive in seconds.
-2. An entry in an ICS calendar feed served at a token-protected URL on `spectretrade.in`. iOS Calendar subscribes to that feed once and pulls updates automatically. The same calendar shows up on iPad, iPhone, and via `icloud.com` on the laptop.
+2. An entry in an ICS calendar feed served at a token-protected URL on `<your-domain>`. iOS Calendar subscribes to that feed once and pulls updates automatically. The same calendar shows up on iPad, iPhone, and via `icloud.com` on the laptop.
 
 That is the entire system. One Go binary, one SQLite file, two HTTP endpoints (one outbound to ntfy, one inbound serving the ICS feed). The rendering on every device is handled by apps that already exist on the OS — no client code is written by me.
 
 ## 3. Hosting
 
-The Spectre box. It already runs nginx with SSL terminated for `spectretrade.in`, it is already paid for, and this service needs almost nothing in resources — roughly 30 MB of RAM and near-zero CPU, since it polls once every fifteen minutes and serves a calendar feed a few times an hour.
+A small dedicated Linux VM with a public IP and a domain pointed at it (see `<your-domain>` placeholder used throughout). The service needs almost nothing in resources — roughly 30 MB of RAM and near-zero CPU, since it polls once every fifteen minutes and serves a calendar feed a few times an hour.
 
-The Go process listens only on `127.0.0.1:8080`. nginx terminates SSL on the public domain and proxies the public path `/school/*` to the local port. The only inbound traffic from the internet is the ICS feed; everything else is internal.
+The Go process listens only on `127.0.0.1:8080`. nginx terminates SSL on the public domain and proxies the public path `/school/*` to the local port. The only inbound traffic from the internet is the ICS feed and the dashboard URL; everything else is internal.
 
-If at some point I want to isolate this from Spectre, viable alternatives are Oracle Cloud Always-Free (overkill but truly free), Hetzner CX11 (about €4/month), or Fly.io's free tier. A home server or Raspberry Pi is not suitable, because iOS Calendar refreshes the ICS feed from public IP space and a NAT setup would require tunneling.
+Viable cheap hosts: Oracle Cloud Always-Free (overkill but truly free), Hetzner CX11 (about €4/month), or Fly.io's free tier. A home server or Raspberry Pi is not suitable, because iOS Calendar refreshes the ICS feed from public IP space and a NAT setup would require tunneling.
 
 ## 4. Project layout
 
@@ -79,7 +79,7 @@ neverskip-sync/
   README.md
 ```
 
-SQLite via `modernc.org/sqlite` (pure Go, no CGO) so the binary cross-compiles statically from a laptop to the Spectre box without dragging in libc dependencies. Calendar generation via `github.com/arran4/golang-ical` to avoid hand-writing RFC 5545.
+SQLite via `modernc.org/sqlite` (pure Go, no CGO) so the binary cross-compiles statically from a laptop to the deploy target without dragging in libc dependencies. Calendar generation via `github.com/arran4/golang-ical` to avoid hand-writing RFC 5545.
 
 ## 5. Configuration and secrets
 
@@ -92,7 +92,7 @@ Variables:
 - `NTFY_URL` — default `https://ntfy.sh`
 - `NTFY_TOPIC` — long random string (anyone who guesses it can spam my phone)
 - `ICS_TOKEN` — long random string used as a query-param secret on the ICS feed
-- `CALENDAR_HOST` — default `spectretrade.in`, used in VEVENT UIDs
+- `CALENDAR_HOST` — default `neverskip-sync.local`; set to your real public domain so VEVENT UIDs remain globally unique
 - `SQLITE_PATH` — default `/var/lib/neverskip-sync/state.db`
 - `POLL_INTERVAL` — default `15m`
 - `LISTEN_ADDR` — default `127.0.0.1:8080`
@@ -238,7 +238,7 @@ The topic name is the only auth, so it must be a long random string. Anyone who 
 
 The handler reads all rows from `seen` where the item belongs on the calendar — initially that means dailynotice items with a non-null `event_time`, but the rule is configurable. It builds a `VCALENDAR` with one `VEVENT` per row:
 
-- `UID = msg_id@spectretrade.in` — stable across regenerations, so iOS Calendar updates events rather than duplicating them
+- `UID = msg_id@<your-domain>` — stable across regenerations, so iOS Calendar updates events rather than duplicating them
 - `SUMMARY = [section] clean_title`
 - `DTSTART = event_time`
 - `DTEND = event_time + 1h` (default duration when not specified)
@@ -259,7 +259,7 @@ The Go server listens only on `127.0.0.1:8080`. Three handlers:
 - `GET /school/healthz` — returns `200 OK` with the literal body `ok`, for monitoring
 - `GET /school/debug/recent` — returns the last 20 items as JSON, protected by a separate debug token, useful when something goes wrong
 
-nginx has a `location /school/` block that proxies to `127.0.0.1:8080` with the standard `X-Forwarded-For`, `X-Forwarded-Proto`, and `Host` headers. SSL termination is already handled by the existing Spectre nginx config, so the new block inherits HTTPS for free.
+nginx has a `location /school/` block that proxies to `127.0.0.1:8080` with the standard `X-Forwarded-For`, `X-Forwarded-Proto`, and `Host` headers. SSL termination is handled by the existing nginx config on `<your-domain>`, so the new block inherits HTTPS for free.
 
 ## 13. Resilience
 
@@ -271,7 +271,7 @@ A health-tracking counter records consecutive failed cycles. After three in a ro
 
 ## 14. Deployment
 
-`make build` cross-compiles a static binary for the Spectre box's architecture (likely linux/amd64; arm64 if it's an ARM instance). `scp` the binary, the systemd unit, and the nginx fragment over. `systemctl daemon-reload && systemctl restart neverskip-sync`. `nginx -t && nginx -s reload`.
+`make build` cross-compiles a static binary for the deploy target's architecture (likely linux/amd64; arm64 if it's an ARM instance). `scp` the binary, the systemd unit, and the nginx fragment over. `systemctl daemon-reload && systemctl restart neverskip-sync`. `nginx -t && nginx -s reload`.
 
 The systemd unit pins:
 
@@ -293,7 +293,7 @@ ReadWritePaths=/var/lib/neverskip-sync
 
 A dedicated `neverskip` user owns the SQLite file and has no shell. The binary lives in `/opt/neverskip-sync/bin/`. State lives in `/var/lib/neverskip-sync/`. Logs go to the journal (`journalctl -u neverskip-sync`).
 
-The iOS Calendar subscription is set up once: Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar → paste `https://spectretrade.in/school/calendar.ics?token=<ICS_TOKEN>`. Refresh frequency: every 15 minutes. Done.
+The iOS Calendar subscription is set up once: Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar → paste `https://<your-domain>/school/calendar.ics?token=<ICS_TOKEN>`. Refresh frequency: every 15 minutes. Done.
 
 The ntfy iOS app is installed once from the App Store, then `Add subscription` with the topic name. Done.
 

@@ -30,7 +30,7 @@ func Load() (Config, error) {
 		NtfyURL:        getenvDefault("NTFY_URL", "https://ntfy.sh"),
 		NtfyTopic:      os.Getenv("NTFY_TOPIC"),
 		ICSToken:       os.Getenv("ICS_TOKEN"),
-		CalendarHost:   getenvDefault("CALENDAR_HOST", "spectretrade.in"),
+		CalendarHost:   getenvDefault("CALENDAR_HOST", "neverskip-sync.local"),
 		SQLitePath:     getenvDefault("SQLITE_PATH", "/var/lib/neverskip-sync/state.db"),
 		ListenAddr:     getenvDefault("LISTEN_ADDR", "127.0.0.1:8080"),
 		QuietHours:     getenvBool("QUIET_HOURS", false),

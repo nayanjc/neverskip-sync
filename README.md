@@ -101,7 +101,7 @@ Optional:
   When unset or the file is missing, falls back to `NEVERSKIP_TOKEN`.
 - `ICS_TOKEN` — query-param secret for the calendar feed. **Unset disables the
   endpoint** (returns 501) — handy in pure-Phase-1 setups.
-- `CALENDAR_HOST` — default `spectretrade.in`; used in VEVENT UIDs to keep
+- `CALENDAR_HOST` — default `<your-domain>`; used in VEVENT UIDs to keep
   them globally unique
 - `NTFY_URL` — default `https://ntfy.sh`
 - `SQLITE_PATH` — default `/var/lib/neverskip-sync/state.db`
@@ -176,7 +176,7 @@ The `parser` and `neverskip` packages have tests that run against real
 (sanitised) fixtures committed under `internal/neverskip/testdata/`. The
 fixtures are personal-info-scrubbed copies of live responses from the API.
 
-## Deployment (Spectre box)
+## Deployment
 
 One-time setup on the server:
 
@@ -190,24 +190,24 @@ Build and ship the binary from the laptop:
 
 ```bash
 make build-linux
-scp bin/neverskip-sync.linux-amd64 spectre:/tmp/server
-ssh spectre 'sudo install -m 0755 /tmp/server /opt/neverskip-sync/bin/server && rm /tmp/server'
+scp bin/neverskip-sync.linux-amd64 <your-server>:/tmp/server
+ssh <your-server> 'sudo install -m 0755 /tmp/server /opt/neverskip-sync/bin/server && rm /tmp/server'
 ```
 
 Drop in the systemd unit + nginx fragment:
 
 ```bash
-scp systemd/neverskip-sync.service spectre:/tmp/
-scp systemd/neverskip-sync.env.example spectre:/tmp/
-scp nginx/neverskip-sync.conf spectre:/tmp/
-ssh spectre 'sudo install -m 0644 /tmp/neverskip-sync.service /etc/systemd/system/'
-ssh spectre 'sudo install -m 0600 -o neverskip -g neverskip /tmp/neverskip-sync.env.example /etc/neverskip-sync.env'
-ssh spectre 'sudo $EDITOR /etc/neverskip-sync.env'   # fill in real values
-ssh spectre 'sudo install -m 0644 /tmp/neverskip-sync.conf /etc/nginx/snippets/neverskip-sync.conf'
+scp systemd/neverskip-sync.service <your-server>:/tmp/
+scp systemd/neverskip-sync.env.example <your-server>:/tmp/
+scp nginx/neverskip-sync.conf <your-server>:/tmp/
+ssh <your-server> 'sudo install -m 0644 /tmp/neverskip-sync.service /etc/systemd/system/'
+ssh <your-server> 'sudo install -m 0600 -o neverskip -g neverskip /tmp/neverskip-sync.env.example /etc/neverskip-sync.env'
+ssh <your-server> 'sudo $EDITOR /etc/neverskip-sync.env'   # fill in real values
+ssh <your-server> 'sudo install -m 0644 /tmp/neverskip-sync.conf /etc/nginx/snippets/neverskip-sync.conf'
 ```
 
 Include the snippet inside your existing `server {}` block for
-`spectretrade.in`:
+`<your-domain>`:
 
 ```nginx
 include /etc/nginx/snippets/neverskip-sync.conf;
@@ -216,14 +216,14 @@ include /etc/nginx/snippets/neverskip-sync.conf;
 Then:
 
 ```bash
-ssh spectre 'sudo nginx -t && sudo systemctl reload nginx'
-ssh spectre 'sudo systemctl daemon-reload && sudo systemctl enable --now neverskip-sync'
-ssh spectre 'systemctl status neverskip-sync; journalctl -u neverskip-sync --since=-2m -n 50'
+ssh <your-server> 'sudo nginx -t && sudo systemctl reload nginx'
+ssh <your-server> 'sudo systemctl daemon-reload && sudo systemctl enable --now neverskip-sync'
+ssh <your-server> 'systemctl status neverskip-sync; journalctl -u neverskip-sync --since=-2m -n 50'
 ```
 
 Finally, on the iPhone: **Settings → Calendar → Accounts → Add Account →
 Other → Add Subscribed Calendar**, paste
-`https://spectretrade.in/school/calendar.ics?token=<ICS_TOKEN>`, refresh
+`https://<your-domain>/school/calendar.ics?token=<ICS_TOKEN>`, refresh
 frequency every 15 minutes. Done.
 
 ## What's intentionally not here
